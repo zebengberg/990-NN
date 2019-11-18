@@ -1,0 +1,12 @@
+# Ignore hidden garbage
+.idea/
+.ipynb_checkpoints/
+.DS_Store
+
+# Ignore downloaded xml data.
+data/
+sample_data/
+
+# Ignore downloaded index.
+index.json
+sample_index.json
