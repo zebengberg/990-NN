@@ -90,7 +90,7 @@ def get_data(index):
                             f.write(r.content)  # writing bytes, not a string
                         data_size += os.path.getsize(file_address)
                     # AWS gave 404 status
-                    # response may be a nonexistent xml file mistakenly listed
+                    # response may be a nonexistent XML file mistakenly listed
                     else:
                         bad_orgs.append(org)
 
@@ -110,7 +110,7 @@ def get_data(index):
             last_bad_write = dt.datetime.now()
             
         # Updating status bar
-        t.set_description('{}GB // {} bads'.format(round(data_size / (10**9), 2),
+        t.set_description('{}GB // {} bad'.format(round(data_size / (10**9), 2),
                                                    len(bad_orgs)))
 
 

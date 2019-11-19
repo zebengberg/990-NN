@@ -3,10 +3,8 @@
 .ipynb_checkpoints/
 .DS_Store
 
-# Ignore downloaded xml data.
+# Ignore data files.
 data/
-sample_data/
-
-# Ignore downloaded index.
+data.csv
 index.json
 sample_index.json

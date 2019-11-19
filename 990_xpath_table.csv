@@ -1,4 +1,4 @@
-CATEGORY,KEY,XPATH BEFORE 2013 VERSION,XPATH AFTER OR DURING 2013 VERSION,DATA TYPE,PART OR SCHEDULE
+CATEGORY,KEY,XPATH BEFORE SCHEMA CHANGE,XPATH AFTER SCHEMA CHANGE,DATA TYPE,PART OR SCHEDULE
 descriptive,ein,ReturnHeader/Filer/EIN,ReturnHeader/Filer/EIN,str,header
 descriptive,founded,ReturnData/IRS990/YearFormation,ReturnData/IRS990/FormationYr,int,header
 descriptive,mission,ReturnData/IRS990/ActivityOrMissionDescription,ReturnData/IRS990/ActivityOrMissionDesc,str,1
