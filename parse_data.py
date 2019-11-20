@@ -42,7 +42,9 @@ class Parser:
 
         # Starting to fill self.org with data from organization.
         # First use "meta-data" from index file, then get into XML tree.
-        self.org = {'name': org['OrganizationName'], 'url': org['URL']}
+        self.org = {'name': org['OrganizationName'],
+                    'url': org['URL'],
+                    'year': org['TaxPeriod']}
 
         file_name = org['URL'].rsplit('/')[-1]
         tree = ElementTree.parse(self.data_directory + file_name)
