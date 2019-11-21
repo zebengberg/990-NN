@@ -23,7 +23,7 @@ revenue,contributions_revenue,ReturnData/IRS990/ContributionsGrantsCurrentYear,R
 revenue,program_revenue,ReturnData/IRS990/ProgramServiceRevenueCY,ReturnData/IRS990/CYProgramServiceRevenueAmt,int,1
 revenue,investment_revenue,ReturnData/IRS990/InvestmentIncomeCurrentYear,ReturnData/IRS990/CYInvestmentIncomeAmt,int,1
 revenue,other_revenue,ReturnData/IRS990/OtherRevenueCurrentYear,ReturnData/IRS990/CYOtherRevenueAmt,int,1
-revenue,total_revenue,ReturnData/IRS990/TotalRevenueCurrentYear,ReturnData/IRS990/CYTotalRevenueAmt,int,1
+total,total_revenue,ReturnData/IRS990/TotalRevenueCurrentYear,ReturnData/IRS990/CYTotalRevenueAmt,int,1
 revenue,federated_campaigns_revenue,ReturnData/IRS990/FederatedCampaigns,ReturnData/IRS990/FederatedCampaignsAmt,int,8
 revenue,fundraising_revenue,ReturnData/IRS990/FundraisingEvents,ReturnData/IRS990/FundraisingAmt,int,8
 revenue,grants_revenue,ReturnData/IRS990/GovernmentGrants,ReturnData/IRS990/GovernmentGrantsAmt,int,8
@@ -34,7 +34,7 @@ expense,salaries_expense,ReturnData/IRS990/SalariesEtcCurrentYear,ReturnData/IRS
 expense,prof_fundraising_expense,ReturnData/IRS990/TotalProfFundrsngExpCY,ReturnData/IRS990/CYTotalProfFndrsngExpnsAmt,int,1
 expense,total_fundraising_expense,ReturnData/IRS990/TotalFundrsngExpCurrentYear,ReturnData/IRS990/CYTotalFundraisingExpenseAmt,int,1
 expense,other_expense,ReturnData/IRS990/OtherExpensesCurrentYear,ReturnData/IRS990/CYOtherExpensesAmt,int,1
-expense,total_expense,ReturnData/IRS990/TotalExpensesCurrentYear,ReturnData/IRS990/CYTotalExpensesAmt,int,1
+total,total_expense,ReturnData/IRS990/TotalExpensesCurrentYear,ReturnData/IRS990/CYTotalExpensesAmt,int,1
 expense,program_expense,ReturnData/IRS990/TotalProgramServiceExpense,ReturnData/IRS990/TotalProgramServiceExpensesAmt,int,3
 expense,officer_salaries_expense,ReturnData/IRS990/CompCurrentOfficersDirectors/Total,ReturnData/IRS990/CompCurrentOfcrDirectorsGrp/TotalAmt,int,9
 expense,nonofficer_salaries_expense,ReturnData/IRS990/OtherSalariesAndWages/Total,ReturnData/IRS990/OtherSalariesAndWagesGrp/TotalAmt,int,9
@@ -48,8 +48,8 @@ expense,it_expense,ReturnData/IRS990/InformationTechnology/Total,ReturnData/IRS9
 expense,occupancy_expense,ReturnData/IRS990/Occupancy/Total,ReturnData/IRS990/OccupancyGrp/TotalAmt,int,9
 expense,insurance_expense,ReturnData/IRS990/Insurance/Total,ReturnData/IRS990/InsuranceGrp/TotalAmt,int,9
 expense,depreciation_expense,ReturnData/IRS990/DepreciationDepletion/Total,ReturnData/IRS990/DepreciationDepletionGrp/TotalAmt,int,9
-net,profit,ReturnData/IRS990/RevenuesLessExpensesCY,ReturnData/IRS990/CYRevenuesLessExpensesAmt,int,1
-assets,total_assets,ReturnData/IRS990/TotalAssetsEOY,ReturnData/IRS990/TotalAssetsEOYAmt,int,1
+total,profit,ReturnData/IRS990/RevenuesLessExpensesCY,ReturnData/IRS990/CYRevenuesLessExpensesAmt,int,1
+total,total_assets,ReturnData/IRS990/TotalAssetsEOY,ReturnData/IRS990/TotalAssetsEOYAmt,int,1
 assets,noninterest_cash_assets,ReturnData/IRS990/CashNonInterestBearing/EOY,ReturnData/IRS990/CashNonInterestBearingGrp/EOYAmt,int,10
 assets,savings_cash_assets,ReturnData/IRS990/SavingsAndTempCashInvestments/EOY,ReturnData/IRS990/SavingsAndTempCashInvstGrp/EOYAmt,int,10
 assets,pledges_assets,ReturnData/IRS990/PledgesAndGrantsReceivable/EOY,ReturnData/IRS990/PledgesAndGrantsReceivableGrp/EOYAmt,int,10
@@ -58,10 +58,10 @@ assets,land_assets,ReturnData/IRS990/PledgesAndGrantsReceivable/EOY,ReturnData/I
 assets,depreciated_land_assets,ReturnData/IRS990/PledgesAndGrantsReceivable/EOY,ReturnData/IRS990/LandBldgEquipBasisNetGrp/EOYAmt,int,10
 assets,investment_assets,ReturnData/IRS990/PledgesAndGrantsReceivable/EOY,ReturnData/IRS990/InvestmentsPubTradedSecGrp/EOYAmt,int,10
 assets,other_assets,ReturnData/IRS990/PledgesAndGrantsReceivable/EOY,ReturnData/IRS990/OtherAssetsTotalGrp/EOYAmt,int,10
-liabilities,total_liabilities,ReturnData/IRS990/PledgesAndGrantsReceivable/EOY,ReturnData/IRS990/TotalLiabilities/EOYAmt,int,1
+total,total_liabilities,ReturnData/IRS990/PledgesAndGrantsReceivable/EOY,ReturnData/IRS990/TotalLiabilities/EOYAmt,int,1
 liabilities,payment_liabilities,ReturnData/IRS990/AccountsPayableAccrExpnssGrp/EOYAmt,ReturnData/IRS990/AccountsPayableAccrExpnssGrp/EOYAmt,int,10
 liabilities,mortgage_liabilities,ReturnData/IRS990/MortNotesPyblSecuredInvestProp/EOY,ReturnData/IRS990/MortgNotesPyblScrdInvstPropGrp/EOYAmt,int,10
-net,net_assets,ReturnData/IRS990/NetAssetsOrFundBalancesEOY,ReturnData/IRS990/NetAssetsOrFundBalancesEOYAmt,int,1
+total,net_assets,ReturnData/IRS990/NetAssetsOrFundBalancesEOY,ReturnData/IRS990/NetAssetsOrFundBalancesEOYAmt,int,1
 endowment,current_endowment,ReturnData/IRS990ScheduleD/CurrentYear/EndOfYearBalance,ReturnData/IRS990ScheduleD/CYEndwmtFundGrp/EndYearBalanceAmt,int,D
 endowment,minus1_endowment,ReturnData/IRS990ScheduleD/CurrentYearMinus1Year/EndOfYearBalance,ReturnData/IRS990ScheduleD/CYMinus1EndwmtFundGrp/EndYearBalanceAmt,int,D
 endowment,minus2_endowment,ReturnData/IRS990ScheduleD/CurrentYearMinus2Years/EndOfYearBalance,ReturnData/IRS990ScheduleD/CYMinus2EndwmtFundGrp/EndYearBalanceAmt,int,D

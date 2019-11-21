@@ -2,9 +2,13 @@
 .idea/
 .ipynb_checkpoints/
 .DS_Store
+__pycache__/
 
 # Ignore data files.
 data/
 data.csv
 index.json
-sample_index.json
+
+# Current files in development.
+sandbox.ipynb
+mission_keywords.txt
