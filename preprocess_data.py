@@ -170,7 +170,7 @@ def get_highest_comp(officers):
 
 pdf['highest'] = df['officers'].progress_apply(get_highest_comp)
 # Transforming the highest compensated into a proportion of total expenses.
-pdf['highest'] = pdf['highest'] / df['total_expenses']
+pdf['highest'] = pdf['highest'] / df['total_expense']
 
 
 print('Saving processed DataFrame to file.')
