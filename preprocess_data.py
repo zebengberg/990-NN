@@ -1,3 +1,4 @@
+import os
 import pandas as pd
 import numpy as np
 from ast import literal_eval
@@ -173,6 +174,8 @@ pdf['highest'] = pdf['highest'] / df['total_expenses']
 
 
 print('Saving processed DataFrame to file.')
+if not os.path.exists('NN/'):
+    os.mkdir('NN/')
 pdf.to_csv('NN/processed_data.csv', index=False)
 
 
