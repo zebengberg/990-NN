@@ -83,6 +83,7 @@ print('Done deleting bad rows. Now starting to populate processed DataFrame.')
 # Both DataFrames will have the same index set.
 pdf = pd.DataFrame(index=df.index)
 pdf['year'] = df['year']
+pdf['ein'] = df['ein']
 
 
 def clean_count_of(grp):
@@ -176,7 +177,7 @@ pdf['highest'] = pdf['highest'] / df['total_expense']
 print('Saving processed DataFrame to file.')
 if not os.path.exists('NN/'):
     os.mkdir('NN/')
-pdf.to_csv('NN/processed_data.csv', index=False)
+pdf.to_csv('NN/year_to_year_data.csv', index=False)
 
 
 # Finding year founded and mission data.
