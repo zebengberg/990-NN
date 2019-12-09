@@ -61,7 +61,7 @@ class Parser:
             print('Index EIN: {}   XML EIN: {}'.format(org['EIN'], xml_ein))
             raise Exception('EINs do not match between XML file and index.!')
 
-        # Getting the XML 990 version. This is necessary for parsing xpaths.
+        # Getting the XML 990 version. This is necessary for parsing x-paths.
         version = self.root.attrib['returnVersion']
         self.org['version'] = int(version[:4])
         # Choosing the dictionary to use based on the XML 990 version.

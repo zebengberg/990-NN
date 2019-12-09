@@ -214,8 +214,6 @@ with open('mission_keywords.txt') as f:
 # than modifying pdf inplace for every row.
 list_of_one_hot_dicts = []
 
-print('Parsing mission statement for keywords.')
-
 
 def convert_mission_to_one_hot(row):
     """Encode mission keywords with one-hot vector."""
