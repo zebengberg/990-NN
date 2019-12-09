@@ -210,13 +210,19 @@ pdf['founded'] = (pdf['founded'] - 2000) / 100
 with open('mission_keywords.txt') as f:
     mission_keywords = f.read().splitlines()
 
-# Initializing 100 new columns in pdf to 0.
-for keyword in mission_keywords:
-    pdf[keyword] = 0
+# Empty list to be appended with one-hot dicts. This approach is much faster
+# than modifying pdf inplace for every row.
+list_of_one_hot_dicts = []
+
+print('Parsing mission statement for keywords.')
 
 
 def convert_mission_to_one_hot(row):
     """Encode mission keywords with one-hot vector."""
+
+    # Encode key words in the mission statement as one-hot vectors.
+    one_hot_dict = {word: 0 for word in mission_keywords}
+    one_hot_dict['index'] = row.name
 
     mission = row['mission']
     mission = mission.lower()  # convert to lowercase
@@ -224,11 +230,18 @@ def convert_mission_to_one_hot(row):
     stripped = ''.join(e for e in mission if e.isalnum())
     for word in mission_keywords:
         if word in stripped:
-            pdf.loc[row.name, word] = 1  # not counting multiplicity
+            one_hot_dict[word] = 1  # not counting multiplicity
+
+    list_of_one_hot_dicts.append(one_hot_dict)
 
 
 print('Searching mission statement for keywords.')
 df.progress_apply(convert_mission_to_one_hot, axis=1)
+
+print('Adding discovered keywords to the DataFrame.')
+mission_df = pd.DataFrame(list_of_one_hot_dicts)
+mission_df.set_index('index', inplace=True)
+pdf = pd.concat([pdf, mission_df], axis=1)
 
 print('Done with pre-processing data.')
 print('Saving processed DataFrame to file.')
