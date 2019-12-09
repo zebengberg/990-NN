@@ -85,6 +85,7 @@ print('Done removing bad rows. Now starting to populate processed DataFrame.')
 # The processed DataFrame "pdf" to be loaded with data from df.
 # Both DataFrames will have the same index set.
 pdf = pd.DataFrame(index=df.index)
+pdf['next_year_total_revenue'] = df['next_year_total_revenue']
 
 # Encoding the year as a one-hot.
 for year in range(2010, 2020):
