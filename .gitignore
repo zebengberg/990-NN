@@ -8,8 +8,8 @@ __pycache__/
 data/
 data.csv
 index.json
-NN/organization_data.csv
-NN/year_to_year_data.csv
+NN/processed_data.csv
 
 # Current files in development.
 sandbox.ipynb
+NN/sandbox.ipynb

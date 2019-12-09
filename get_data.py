@@ -95,10 +95,10 @@ class Data:
                     else:
                         if r.ok:
                             with open(file_address, 'wb+') as f:
-                                f.write(r.content)  # writing bytes, not a string
+                                f.write(r.content)  # writing bytes, not string
                             data_size += os.path.getsize(file_address)
                         # AWS gave 404 status
-                        # response may be a nonexistent XML file mistakenly listed
+                        # response may be nonexistent XML file mistakenly listed
                         else:
                             bad_orgs.append(org)
 
