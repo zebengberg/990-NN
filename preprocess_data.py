@@ -86,6 +86,10 @@ print('Done removing bad rows. Now starting to populate processed DataFrame.')
 # Both DataFrames will have the same index set.
 pdf = pd.DataFrame(index=df.index)
 pdf['next_year_total_revenue'] = df['next_year_total_revenue']
+# Some scaling applied; to obtain original, take exp.
+pdf['next_year_total_revenue'] = np.log(pdf['next_year_total_revenue']\
+                                 .mask(pdf['next_year_total_revenue'] <= 0))\
+                                 .fillna(0)
 
 # Encoding the year as a one-hot.
 for year in range(2010, 2020):
@@ -180,6 +184,7 @@ pdf['highest'] = pdf['highest'] / df['total_expense']
 
 # Finding year founded and mission data.
 print('Starting to gather year-independent organization data.')
+pdf['ein'] = df['ein']
 g = df.groupby('ein')
 
 
@@ -199,7 +204,12 @@ def clean_founded(grp):
 
 
 print('Cleaning the year founded.')
-pdf['founded'] = g.progress_apply(clean_founded)
+founded_grouped = g.apply(clean_founded)
+founded_grouped.name = 'founded'
+# Broadcast this Grouped object back to full DataFrame.
+pdf = pdf.join(founded_grouped, on='ein')
+# Dropping the 'ein' column. The NN does not need this.
+pdf.drop('ein', axis=1, inplace=True)
 # We normalize. Now values are between [-4.0, 0.2], and mostly close to 0.
 pdf['founded'] = (pdf['founded'] - 2000) / 100
 
