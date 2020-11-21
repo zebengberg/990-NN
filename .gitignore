@@ -1,15 +1,15 @@
-# Ignore hidden garbage
-.idea/
+# editor stuff
 .ipynb_checkpoints/
 .DS_Store
-__pycache__/
+__pycache__
+.vscode
 
-# Ignore data files.
+# data files
 data/
-data.csv
-index.json
-NN/processed_data.csv
 
-# Current files in development.
-sandbox.ipynb
-NN/sandbox.ipynb
+# jupyter notebooks
+*.ipynb
+
+# outdated stuff
+old_src/
+old_data
