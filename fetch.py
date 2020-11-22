@@ -6,7 +6,7 @@ import math
 import asyncio
 import aiohttp
 from tqdm import trange
-from utils import clean_year, parse, save_as_csv, verify, bundle_year, confirm_year
+from utils import parse, save_as_csv, verify, empty_data
 
 
 SESSIONS_PER_BATCH = 20
@@ -17,6 +17,9 @@ async def fetch(org, session):
   """Request 990 XML data from org."""
   async with session.get(org['URL'], ssl=False) as response:
     try:
+      if response.status == 404:
+        return empty_data()
+
       assert response.status == 200
       xml = await response.read()
       data = parse(xml)
@@ -44,10 +47,11 @@ async def run_session(orgs):
 def run_batch(orgs, csv_path):
   """Fetch and save data from orgs."""
   batch = []
-  for _ in trange(SESSIONS_PER_BATCH):
+  for j in trange(SESSIONS_PER_BATCH):
     loop = asyncio.get_event_loop()
     asyncio.set_event_loop(loop)
-    task = asyncio.ensure_future(run_session(orgs))
+    orgs_slice = orgs[j * SESSION_SIZE: (j + 1) * SESSION_SIZE]
+    task = asyncio.ensure_future(run_session(orgs_slice))
     loop.run_until_complete(task)
     result = task.result().result()
     batch += result
@@ -76,6 +80,7 @@ def run_year(year):
     print(f'Running batch {n_batch} / {total_n_batch} in year {year}')
     csv_name = f'{n_batch:03}' + '.csv'
     csv_path = os.path.join(path, csv_name)
-    orgs = index[n_batch * SESSION_SIZE: (n_batch + 1) * SESSION_SIZE]
+    batch_size = SESSION_SIZE * SESSIONS_PER_BATCH
+    orgs = index[n_batch * batch_size: (n_batch + 1) * batch_size]
     run_batch(orgs, csv_path)
   print(f'Fetched all data from {year}!')

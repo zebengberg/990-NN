@@ -9,6 +9,13 @@ xp = pd.read_csv('xpath_headers.csv')
 NEW_PATHS = dict(zip(list(xp['key']), list(xp['new_xpath'])))
 OLD_PATHS = dict(zip(list(xp['key']), list(xp['old_xpath'])))
 DATA_TYPES = dict(zip(list(xp['key']), list(xp['data_type'])))
+OFFICERS = ['officer_{i}' for i in range(5)]
+
+
+def empty_data():
+  """Return an dictionary of all 0s."""
+  keys = list(NEW_PATHS.keys()) + OFFICERS
+  return dict(zip(keys, [0] * len(keys)))
 
 
 def parse(xml):
@@ -28,7 +35,29 @@ def parse(xml):
       data[k] = root.find(p, namespaces=root.nsmap).text
     except AttributeError:
       data[k] = 0  # can easily be cast to int, float, str, bool
+  salaries = parse_officers(root, version_year)
+  data.update(salaries)
   return data
+
+
+def parse_officers(root, version_year):
+  """Grab officer information from the xml tree."""
+
+  p = 'ReturnData/IRS990/Form990PartVIISectionA'
+  if version_year < 2013:
+    p += '/ReportableCompFromOrganization'
+  else:
+    p += 'Grp/ReportableCompFromOrgAmt'
+
+  salaries = root.findall(p, namespaces=root.nsmap)
+  salaries = [int(s.text) for s in salaries]
+  salaries.sort(reverse=True)
+  salaries = salaries[:len(OFFICERS)]
+  # skimming off top salaries
+  n_pad = len(OFFICERS) - len(salaries)
+  if n_pad > 0:
+    salaries += [0] * n_pad  # padding rest with 0
+  return dict(zip(OFFICERS, salaries))
 
 
 def verify(data, org):
@@ -43,12 +72,13 @@ def save_as_csv(data, filepath):
   types = {'int': int, 'str': str, 'float': float,
            'bool': lambda x: 1 if x == '1' or x == 'true' else 0}
   for k in df.columns:
-    type_as_string = DATA_TYPES[k]
-    type_literal = types[type_as_string]
-    if type_as_string == 'bool':
-      df[k] = df[k].apply(type_literal)
-    else:
-      df[k] = df[k].astype(type_literal)
+    if k.split('_')[0] != 'officer':
+      type_as_string = DATA_TYPES[k]
+      type_literal = types[type_as_string]
+      if type_as_string == 'bool':
+        df[k] = df[k].apply(type_literal)
+      else:
+        df[k] = df[k].astype(type_literal)
   df.to_csv(filepath, index=False)
 
 
@@ -77,6 +107,8 @@ def confirm_year(year):
   with open(index_path) as f:
     index = json.load(f)
 
+  print(len(df), len(index))
+  print(df.shape)
   assert len(df) == len(index)
   print(f'Successfully fetched {len(df)} organizations in {year}')
 
@@ -97,4 +129,5 @@ def get_index_years():
   """Return list of years corresponding to cached index files."""
   index_path = os.path.join('data', 'index')
   years = os.listdir(index_path)
+  years.sort()
   return [int(y.split('_')[1][:4]) for y in years]
