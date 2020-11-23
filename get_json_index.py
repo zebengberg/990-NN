@@ -1,6 +1,7 @@
 """Get index json files from AWS."""
 
 import os
+import shutil
 import json
 import requests
 
@@ -18,12 +19,8 @@ def get_json_index(year):
 
   local_path = os.path.join(INDEX_PATH, f'index_{year}.json')
   if os.path.exists(local_path):
-    print('Index file already found.')
-    if input('Remove local file and request again? (y/n)') == 'y':
-      os.remove(local_path)
-      get_json_index(year)
-    else:
-      return None
+    print(f'Index file for {year} already saved.')
+    return None
 
   url = f'https://s3.amazonaws.com/irs-form-990/index_{year}.json'
   print('Requesting data from AWS ...')
@@ -38,7 +35,7 @@ def get_json_index(year):
       json.dump(data, f)
     return None
 
-  raise FileNotFoundError(f'Index file for {year} not found.')
+  raise FileNotFoundError(f'Index file for {year} not found on AWS.')
 
 
 def get_all_json_index():

@@ -24,7 +24,12 @@ def parse(xml):
   root = etree.XML(xml)
 
   # the year of the schema version
-  version_year = int(root.attrib['returnVersion'].split('v')[0])
+  try:
+    version_year = int(root.attrib['returnVersion'].split('v')[0])
+  except KeyError as e:
+    print(root)
+    raise e
+
   if version_year < 2013:
     paths = OLD_PATHS
   else:
@@ -98,19 +103,15 @@ def bundle_year(year):
 
 def confirm_year(year):
   """Confirm index and bundled csv have the same number of entries."""
-  csv_path = os.path.join('data', str(year))
-  csv_path = os.path.join(csv_path, str(year) + '.csv')
-  index_path = os.path.join('data', 'index')
-  index_path = os.path.join(index_path, 'index_' + str(year) + '.json')
+  csv_path = os.path.join('data', str(year), str(year) + '.csv')
+  index_path = os.path.join('data', 'index', 'index_' + str(year) + '.json')
 
   df = pd.read_csv(csv_path)
   with open(index_path) as f:
     index = json.load(f)
 
-  print(len(df), len(index))
-  print(df.shape)
   assert len(df) == len(index)
-  print(f'Successfully fetched {len(df)} organizations in {year}')
+  print(f'Successfully fetched {len(df)} tax forms from {year}')
 
 
 def clean_year(year):
@@ -119,7 +120,7 @@ def clean_year(year):
   batches = os.listdir(path)
   batches.sort()
   bundle = str(year) + '.csv'
-  assert batches[-1] == bundle
+  assert bundle in batches
   batches = [os.path.join(path, batch) for batch in batches if batch != bundle]
   for batch in batches:
     os.remove(batch)
@@ -131,3 +132,16 @@ def get_index_years():
   years = os.listdir(index_path)
   years.sort()
   return [int(y.split('_')[1][:4]) for y in years]
+
+
+def load_data():
+  """Return DataFrame containing all data."""
+  dfs = []
+  for year in get_index_years():
+    path = os.path.join('data', str(year), str(year) + '.csv')
+    if os.path.exists(path):
+      df = pd.read_csv(path)
+      dfs.append(df)
+  df = pd.concat(dfs)
+  df = df[df['ein'] != 0]
+  return df.reset_index(drop=True)
