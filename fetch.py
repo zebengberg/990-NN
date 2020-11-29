@@ -33,68 +33,69 @@ async def fetch(org, session):
 
 async def run_session(orgs):
   """Run a single asynchronous request session."""
-  try:
-    tasks = []
-    async with aiohttp.ClientSession() as session:
-      for org in orgs:
-        task = asyncio.ensure_future(fetch(org, session))
-        tasks.append(task)
-      responses = asyncio.gather(*tasks)
-      await responses
-    return responses
-  except aiohttp.ClientConnectionError as e:
-    print(e)
-    time.sleep(10)
-    run_session(orgs)
+  tasks = []
+  async with aiohttp.ClientSession() as session:
+    for org in orgs:
+      task = asyncio.ensure_future(fetch(org, session))
+      tasks.append(task)
+    responses = asyncio.gather(*tasks)
+    await responses
+  return responses
 
 
 def run_batch(orgs, csv_path):
   """Fetch and save data from orgs."""
   batch = []
-  for j in trange(SESSIONS_PER_BATCH):
-    loop = asyncio.get_event_loop()
-    asyncio.set_event_loop(loop)
-    orgs_slice = orgs[j * SESSION_SIZE: (j + 1) * SESSION_SIZE]
-    task = asyncio.ensure_future(run_session(orgs_slice))
-    loop.run_until_complete(task)
-    if task.result() is not None:
+  try:
+    for j in trange(SESSIONS_PER_BATCH):
+      loop = asyncio.get_event_loop()
+      asyncio.set_event_loop(loop)
+      orgs_slice = orgs[j * SESSION_SIZE: (j + 1) * SESSION_SIZE]
+      task = asyncio.ensure_future(run_session(orgs_slice))
+      loop.run_until_complete(task)
       result = task.result().result()
-    else:
-      run_batch(orgs, csv_path)
-    batch += result
+      batch += result
+  except Exception as e:
+    print(e)
+    time.sleep(10)
+    run_batch(orgs, csv_path)
+
   save_as_csv(batch, csv_path)
 
 
-def run_year(year):
-  """Fetch and save data from a specific year."""
+def determine_missing_batches(year, total_n_batch):
+  """Determine the batch files currently missing."""
+
   path = os.path.join('data', str(year))
   if not os.path.exists(path):
     os.mkdir(path)
   batches = os.listdir(path)
-  batches.sort()
+
+  batches = [int(b.split('.')[0]) for b in batches]
+  if year in batches:
+    print(f'Seem to already have data for {year}')
+    return []
+
+  return [i for i in range(total_n_batch + 1) if i not in batches]
+
+
+def run_year(year):
+  """Fetch and save data from a specific year."""
   with open(f'data/index/index_{year}.json') as f:
     index = json.load(f)
   total_n_batch = len(index) // (SESSION_SIZE * SESSIONS_PER_BATCH)
   assert len(str(total_n_batch)) < 4  # for left padding below
 
-  if batches:
-    if batches == [str(year) + '.csv']:
-      print(f'Already have data for {year}')
-      return None
-    highest_n_batch = int(batches[-1].split('.')[0])
-    assert len(str(highest_n_batch)) < 4
-  else:
-    highest_n_batch = -1
-
-  for n_batch in range(highest_n_batch + 1, total_n_batch + 1):
+  missing_batches = determine_missing_batches(year, total_n_batch)
+  for n_batch in missing_batches:
     print(f'Running batch {n_batch} / {total_n_batch} in year {year}')
     csv_name = f'{n_batch:03}' + '.csv'
-    csv_path = os.path.join(path, csv_name)
+    csv_path = os.path.join('data', str(year), csv_name)
     batch_size = SESSION_SIZE * SESSIONS_PER_BATCH
     orgs = index[n_batch * batch_size: (n_batch + 1) * batch_size]
     run_batch(orgs, csv_path)
-  print(f'Fetched all data from {year}!')
-  bundle_year(year)
-  confirm_year(year)
-  clean_year(year)
-  return None
+  if missing_batches:
+    print(f'Fetched all data from {year}!')
+    bundle_year(year)
+    confirm_year(year)
+    clean_year(year)

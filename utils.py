@@ -9,7 +9,8 @@ xp = pd.read_csv('xpath_headers.csv')
 NEW_PATHS = dict(zip(list(xp['key']), list(xp['new_xpath'])))
 OLD_PATHS = dict(zip(list(xp['key']), list(xp['old_xpath'])))
 DATA_TYPES = dict(zip(list(xp['key']), list(xp['data_type'])))
-OFFICERS = ['officer_{i}' for i in range(5)]
+OFFICERS = [f'officer_{i}' for i in range(5)]
+DATA_TYPES.update(dict(zip(OFFICERS, ['int'] * 5)))
 
 
 def empty_data():
@@ -75,15 +76,15 @@ def save_as_csv(data, filepath):
   """Cast data to correct type and save as csv."""
   df = pd.DataFrame(data)
   types = {'int': int, 'str': str, 'float': float,
-           'bool': lambda x: 1 if x == '1' or x == 'true' else 0}
+           'bool': lambda x: 1 if x in ('1', 'true') else 0}
   for k in df.columns:
-    if k.split('_')[0] != 'officer':
-      type_as_string = DATA_TYPES[k]
-      type_literal = types[type_as_string]
-      if type_as_string == 'bool':
-        df[k] = df[k].apply(type_literal)
-      else:
-        df[k] = df[k].astype(type_literal)
+    type_as_string = DATA_TYPES[k]
+    type_literal = types[type_as_string]
+    if type_as_string == 'bool':
+      df[k] = df[k].apply(type_literal)
+    else:
+      df[k] = df[k].astype(type_literal)
+
   df.to_csv(filepath, index=False)
 
 
@@ -110,7 +111,9 @@ def confirm_year(year):
   with open(index_path) as f:
     index = json.load(f)
 
-  assert len(df) == len(index)
+  if len(df) != len(index):
+    raise ValueError(f'len(df) = {len(df)} whereas len(index) = {len(index)}')
+
   print(f'Successfully fetched {len(df)} tax forms from {year}')
 
 
@@ -134,14 +137,35 @@ def get_index_years():
   return [int(y.split('_')[1][:4]) for y in years]
 
 
-def load_data():
+def load_data(year=None):
   """Return DataFrame containing all data."""
+  years = get_index_years()
+  if year is not None:
+    if not year in years:
+      raise ValueError('Check the parameter year.')
+    years = [year]
+
   dfs = []
-  for year in get_index_years():
-    path = os.path.join('data', str(year), str(year) + '.csv')
+  del year
+  for year in years:
+    path = os.path.join('old_data2', str(year), str(year) + '.csv')
     if os.path.exists(path):
       df = pd.read_csv(path)
       dfs.append(df)
   df = pd.concat(dfs)
-  df = df[df['ein'] != 0]
+  df['mission'] = df['mission'].fillna('')  # converting nan missions to ''
+  df = df[df['ein'] != 0]  # to deal with 404s from early years
   return df.reset_index(drop=True)
+
+
+def load_grouped_data():
+  """Load data indexed by EIN."""
+  df = load_data()
+  return df.groupby(by='ein').last()
+
+
+def get_boolean_keys():
+  """Get key names corresponding to boolean values."""
+  xpath_headers = pd.read_csv('xpath_headers.csv')
+  filt = xpath_headers['data_type'] == 'bool'
+  return list(xpath_headers[filt]['key'])
