@@ -45,8 +45,9 @@ async def run_session(orgs):
 
 def run_batch(orgs, csv_path):
   """Fetch and save data from orgs."""
-  batch = []
+
   try:
+    batch = []
     for j in trange(SESSIONS_PER_BATCH):
       loop = asyncio.get_event_loop()
       asyncio.set_event_loop(loop)
@@ -55,12 +56,13 @@ def run_batch(orgs, csv_path):
       loop.run_until_complete(task)
       result = task.result().result()
       batch += result
-  except Exception as e:
+    assert len(batch) == len(orgs)
+    save_as_csv(batch, csv_path)
+
+  except aiohttp.ClientError as e:
     print(e)
     time.sleep(10)
     run_batch(orgs, csv_path)
-
-  save_as_csv(batch, csv_path)
 
 
 def determine_missing_batches(year, total_n_batch):

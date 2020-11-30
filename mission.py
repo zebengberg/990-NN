@@ -1,6 +1,6 @@
 """Explore words found in missions."""
 
-
+import os
 import string
 from tqdm import tqdm
 import nltk
@@ -60,9 +60,7 @@ def total_freq_dist(fd_dict):
 def determine_common_words(total_fd, n_words):
   """Determine most common words used in missions."""
   keys = total_fd.most_common(n_words)
-  keys = [k[0] for k in keys]
-  keys = [tokenize(k) for k in keys]
-  return [k[0] for k in keys if k]
+  return [k[0] for k in keys]
 
 
 def build_freq_df(fd_dict, keys):
@@ -99,23 +97,28 @@ def build_area_plots(freq_df):
   # plotting proportions
   freq_df[gaining_keys].multiply(
       1 / freq_df['total'], axis=0).plot.area(figsize=FIGSIZE)
+  plt.legend(loc='left')
   plt.show()
+
   freq_df[losing_keys].multiply(
       1 / freq_df['total'], axis=0).plot.area(figsize=FIGSIZE)
+  plt.legend(loc='right')
   plt.show()
 
 
 def build_histograms():
   """Build histograms displaying length of missions over time."""
-  for year in get_index_years():
+  years = get_index_years()
+  fig, axs = plt.subplots(len(years), figsize=(16, 12))
+
+  for i, year in enumerate(tqdm(years)):
     df = load_data(year)
-    plt.figure(figsize=(FIGSIZE[0], 2))
     l = df['mission'].apply(len)
-    l.hist(bins=100)
-    plt.title(year)
-    plt.xlabel('Number of characters in mission')
-    plt.ylabel('Number of organizations')
-    plt.show()
+    l.hist(bins=100, ax=axs[i])
+    axs[i].set(xlabel='Number of characters in mission', title=year)
+
+  fig.tight_layout()
+  plt.show()
 
 
 def build_plots():
@@ -143,8 +146,8 @@ def mission_to_one_hot(mission, keys):
   return list(d.values())
 
 
-def write_common_words(n_words):
-  """Write common words to disk."""
+def write_keywords(n_words):
+  """Write common mission keywords to disk."""
   fd_dict = build_freq_dists()
   total_fd = total_freq_dist(fd_dict)
   keys = determine_common_words(total_fd, n_words)
@@ -153,6 +156,17 @@ def write_common_words(n_words):
       f.write(k + '\n')
 
 
+def load_keywords():
+  """Read common mission keywords from disk."""
+  if not os.path.exists('keywords.txt'):
+    raise FileNotFoundError(
+        'Cannot find existing keywords.txt file. Run write_common_words().')
+  with open('keywords.txt') as f:
+    keywords = f.read().split()
+  print(f'Reading {len(keywords)} keywords from file.')
+  return keywords
+
+
 if __name__ == '__main__':
-  write_common_words(1000)
-  build_plots()
+  write_keywords(10000)
+  # build_plots()

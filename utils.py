@@ -148,7 +148,7 @@ def load_data(year=None):
   dfs = []
   del year
   for year in years:
-    path = os.path.join('old_data2', str(year), str(year) + '.csv')
+    path = os.path.join('data', str(year), str(year) + '.csv')
     if os.path.exists(path):
       df = pd.read_csv(path)
       dfs.append(df)

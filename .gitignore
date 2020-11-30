@@ -6,10 +6,11 @@ __pycache__
 
 # data files
 data/
+keywords.txt
 
 # jupyter notebooks
 *.ipynb
 
 # outdated stuff
 old_src/
-old_data
+old_data/
