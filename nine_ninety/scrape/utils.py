@@ -20,9 +20,15 @@ DATA_TYPES.update(dict(zip(OFFICERS, ['int'] * 5)))
 
 
 def empty_data():
-  """Return an dictionary of all 0s."""
+  """Return dictionary of all 0s to use with 404 responses."""
   keys = list(NEW_PATHS.keys()) + OFFICERS
   return dict(zip(keys, [0] * len(keys)))
+
+
+def get_data_path():
+  """Return the absolute path of the `data` directory holding 990 data."""
+  cur_dir = os.path.dirname(__file__)
+  return os.path.join(cur_dir, '..', 'data')
 
 
 def parse(xml):
@@ -97,7 +103,7 @@ def save_as_csv(data, filepath):
 def bundle_year(year):
   """Bundle all batched csv from year into a single csv."""
   print('Bundling csv files into single file')
-  path = os.path.join('data', str(year))
+  path = os.path.join(get_data_path(), str(year))
   batches = os.listdir(path)
   batches.sort()
   batches = [os.path.join(path, batch) for batch in batches]
@@ -110,8 +116,9 @@ def bundle_year(year):
 
 def confirm_year(year):
   """Confirm index and bundled csv have the same number of entries."""
-  csv_path = os.path.join('data', str(year), str(year) + '.csv')
-  index_path = os.path.join('data', 'index', 'index_' + str(year) + '.json')
+  csv_path = os.path.join(get_data_path(), str(year), str(year) + '.csv')
+  index_path = os.path.join(get_data_path(), 'index',
+                            'index_' + str(year) + '.json')
 
   df = pd.read_csv(csv_path)
   with open(index_path) as f:
@@ -125,7 +132,7 @@ def confirm_year(year):
 
 def clean_year(year):
   """Remove csv batches after bundling."""
-  path = os.path.join('data', str(year))
+  path = os.path.join(get_data_path(), str(year))
   batches = os.listdir(path)
   batches.sort()
   bundle = str(year) + '.csv'
@@ -137,7 +144,8 @@ def clean_year(year):
 
 def get_index_years():
   """Return list of years corresponding to cached index files."""
-  index_path = os.path.join('data', 'index')
+
+  index_path = os.path.join(get_data_path(), 'index')
   years = os.listdir(index_path)
   years.sort()
   return [int(y.split('_')[1][:4]) for y in years]
@@ -153,7 +161,7 @@ def load_data(year=None):
 
   dfs = []
   for y in years:
-    path = os.path.join('data', str(y), str(y) + '.csv')
+    path = os.path.join(get_data_path(), str(y), str(y) + '.csv')
     if os.path.exists(path):
       print('Loading data from', y)
       df = pd.read_csv(path)

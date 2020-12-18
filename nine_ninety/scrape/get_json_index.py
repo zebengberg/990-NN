@@ -3,16 +3,17 @@
 import os
 import json
 import requests
+from nine_ninety.scrape.utils import get_data_path
 
 
-INDEX_PATH = os.path.join('data', 'index')
+INDEX_PATH = os.path.join(get_data_path(), 'index')
 
 
 def get_json_index(year):
   """Download 990 index file from AWS and save to disk."""
 
-  if not os.path.exists('data'):
-    os.mkdir('data')
+  if not os.path.exists(get_data_path()):
+    os.mkdir(get_data_path())
   if not os.path.exists(INDEX_PATH):
     os.mkdir(INDEX_PATH)
 

@@ -7,7 +7,7 @@ import asyncio
 import aiohttp
 from tqdm import trange
 from nine_ninety.scrape.utils import parse, save_as_csv, verify, empty_data
-from nine_ninety.scrape.utils import bundle_year, confirm_year, clean_year
+from nine_ninety.scrape.utils import bundle_year, confirm_year, clean_year, get_data_path
 
 
 SESSIONS_PER_BATCH = 20
@@ -68,7 +68,7 @@ def run_batch(orgs, csv_path):
 def determine_missing_batches(year, total_n_batch):
   """Determine the batch files currently missing."""
 
-  path = os.path.join('data', str(year))
+  path = os.path.join(get_data_path(), str(year))
   if not os.path.exists(path):
     os.mkdir(path)
   batches = os.listdir(path)
@@ -83,7 +83,8 @@ def determine_missing_batches(year, total_n_batch):
 
 def run_year(year):
   """Fetch and save data from a specific year."""
-  with open(f'data/index/index_{year}.json') as f:
+  index_path = os.path.join(get_data_path(), 'index', f'index_{year}.json')
+  with open(index_path) as f:
     index = json.load(f)
   total_n_batch = len(index) // (SESSION_SIZE * SESSIONS_PER_BATCH)
   assert len(str(total_n_batch)) < 4  # for left padding below
@@ -92,7 +93,7 @@ def run_year(year):
   for n_batch in missing_batches:
     print(f'Running batch {n_batch} / {total_n_batch} in year {year}')
     csv_name = f'{n_batch:03}' + '.csv'
-    csv_path = os.path.join('data', str(year), csv_name)
+    csv_path = os.path.join(get_data_path(), str(year), csv_name)
     batch_size = SESSION_SIZE * SESSIONS_PER_BATCH
     orgs = index[n_batch * batch_size: (n_batch + 1) * batch_size]
     run_batch(orgs, csv_path)
