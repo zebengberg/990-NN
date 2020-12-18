@@ -1,16 +1,18 @@
 # editor stuff
 .ipynb_checkpoints/
 .DS_Store
-__pycache__
 .vscode
+.pylintrc
+
+# build stuff
+*.egg-info
+__pycache__
 
 # data files
 data/
-keywords.txt
 
 # jupyter notebooks
 *.ipynb
 
 # outdated stuff
 old_src/
-old_data/

@@ -1,7 +1,6 @@
 """Get index json files from AWS."""
 
 import os
-import shutil
 import json
 import requests
 

@@ -2,13 +2,19 @@
 
 import os
 import json
+import pkgutil
+import io
 from lxml import etree
 import pandas as pd
 
-xp = pd.read_csv('xpath_headers.csv')
-NEW_PATHS = dict(zip(list(xp['key']), list(xp['new_xpath'])))
-OLD_PATHS = dict(zip(list(xp['key']), list(xp['old_xpath'])))
-DATA_TYPES = dict(zip(list(xp['key']), list(xp['data_type'])))
+
+xp_bytes = pkgutil.get_data(__name__, '../xpath_headers.csv')
+if xp_bytes is None:
+  raise FileNotFoundError('Issue reading xpath_headers.csv')
+XP = pd.read_csv(io.BytesIO(xp_bytes))
+NEW_PATHS = dict(zip(list(XP['key']), list(XP['new_xpath'])))
+OLD_PATHS = dict(zip(list(XP['key']), list(XP['old_xpath'])))
+DATA_TYPES = dict(zip(list(XP['key']), list(XP['data_type'])))
 OFFICERS = [f'officer_{i}' for i in range(5)]
 DATA_TYPES.update(dict(zip(OFFICERS, ['int'] * 5)))
 
@@ -138,7 +144,7 @@ def get_index_years():
 
 
 def load_data(year=None):
-  """Return DataFrame containing all data."""
+  """Return DataFrame containing 990 data from specified year."""
   years = get_index_years()
   if year is not None:
     if not year in years:
@@ -146,26 +152,36 @@ def load_data(year=None):
     years = [year]
 
   dfs = []
-  del year
-  for year in years:
-    path = os.path.join('data', str(year), str(year) + '.csv')
+  for y in years:
+    path = os.path.join('data', str(y), str(y) + '.csv')
     if os.path.exists(path):
+      print('Loading data from', y)
       df = pd.read_csv(path)
       dfs.append(df)
   df = pd.concat(dfs)
-  df['mission'] = df['mission'].fillna('')  # converting nan missions to ''
+
+  return fix_mistakes(df)
+
+
+def fix_mistakes(df):
+  """Correct obvious mistakes in 990 data."""
+  # converting nan missions to empty strings
+  print('Converting empty missions to strings ....')
+  df['mission'] = df['mission'].fillna('')
+
+  # dealing with 404 errors arrising from outdated index files in early years
+  print('Removing empty items ....')
   df = df[df['ein'] != 0]  # to deal with 404s from early years
-  return df.reset_index(drop=True)
+  df = df[df['organization_name'] != '0']  # removing unnamed
 
-
-def load_grouped_data():
-  """Load data indexed by EIN."""
-  df = load_data()
-  return df.groupby(by='ein').last()
+  # some organizations have repeated tax forms in a given year
+  # only keep most recently submitted form
+  print('Keeping at most one tax form per organization per year ....')
+  df = df.groupby(['ein', 'tax_year']).last().reset_index()
+  return df
 
 
 def get_boolean_keys():
   """Get key names corresponding to boolean values."""
-  xpath_headers = pd.read_csv('xpath_headers.csv')
-  filt = xpath_headers['data_type'] == 'bool'
-  return list(xpath_headers[filt]['key'])
+  filt = XP['data_type'] == 'bool'
+  return list(XP[filt]['key'])

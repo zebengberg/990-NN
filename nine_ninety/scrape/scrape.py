@@ -6,8 +6,8 @@ import time
 import asyncio
 import aiohttp
 from tqdm import trange
-from utils import parse, save_as_csv, verify, empty_data
-from utils import bundle_year, confirm_year, clean_year
+from nine_ninety.scrape.utils import parse, save_as_csv, verify, empty_data
+from nine_ninety.scrape.utils import bundle_year, confirm_year, clean_year
 
 
 SESSIONS_PER_BATCH = 20
