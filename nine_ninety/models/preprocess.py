@@ -1,18 +1,33 @@
 """Clean and preprocess data."""
 
-from tqdm import tqdm
+import numpy as np
+import pandas as pd
 from nine_ninety.scrape.utils import load_data, XP
+from tqdm import tqdm
+tqdm.pandas()
 
 
-def preprocess():
-  """Apply scaling and normalization to DataFrame."""
-  #df = load_data()
-  print(XP['key'])
-  print(XP['data_type'])
+def scale_founded_year(df):
+  """Use organization group to fix and scale founded years."""
+  print('Scaling year founded ....')
+  grouped = df.copy().groupby('ein')
+
+  def apply_to_group(group):
+    mask = group['founded_year'].between(1600, 2030)
+    m = group['founded_year'][mask].mode().mean()
+    if pd.isnull(m):
+      m = 2000  # a default value
+    # normalize so values are between [-4.0, 0.2], and mostly close to 0.
+    m = (m - 2000) / 100
+    group['founded_year'] = m
+    return group
+
+  return grouped.progress_apply(apply_to_group)
 
 
 def include_ratios(df):
   """Include numeric data as ratio of category total."""
+  print('Building ratios ....')
 
   df_copy = df.copy()
   ratio_keys = []
@@ -21,8 +36,42 @@ def include_ratios(df):
     ratio_keys += [(key, 'total_' + category) for key in XP[filt]['key']]
 
   for key1, key2 in tqdm(ratio_keys):
-    df_copy[key1] = df_copy[key1] / df_copy[key2]
+    df_copy[key1 + '_ratio'] = df_copy[key1] / df_copy[key2]
+
+  for key in ['minus1_endowment', 'minus2_endowment',
+              'minus3_endowment', 'minus4_endowment']:
+    df_copy[key + '_ratio'] = df_copy[key] / df['current_endowment']
+
+  for key in ['officer_1', 'officer_2', 'officer_3', 'officer_4']:
+    df_copy[key + '_ratio'] = df_copy[key] / df['officer_0']
+
   return df_copy
 
 
-preprocess()
+def log_scale(df):
+  """Apply log scaling and normalization to numeric columns."""
+  print('Log scaling numeric data ....')
+
+  df_copy = df.copy()
+  for _, row in tqdm(XP.iterrows()):
+    if row.loc['data_type'] == 'int':
+      # masking tax_year, founded_year, n_board, n_employees, n_volunteers
+      key = row['key']
+      if not ('_year' in key or key[:2] == 'n_'):
+        s = np.sign(df[key])
+        df_copy[key] = s * np.log(df[key] * s + 1)
+  return df_copy
+
+
+def preprocess():
+  """Apply scaling and normalization to DataFrame."""
+  df = load_data()
+  # df = scale_founded_year(df)
+  df = include_ratios(df)
+  df = log_scale(df)
+  return df
+
+
+if __name__ == '__main__':
+  df = preprocess()
+  df.to_csv('scaled_data.csv')
