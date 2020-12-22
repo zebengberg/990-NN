@@ -1,5 +1,6 @@
-"""Clean and preprocess data."""
+"""Clean, normalize, and engineering new features from scraped data."""
 
+import os
 import numpy as np
 import pandas as pd
 from nine_ninety.scrape.utils import load_data, XP
@@ -36,15 +37,17 @@ def include_ratios(df):
     ratio_keys += [(key, 'total_' + category) for key in XP[filt]['key']]
 
   for key1, key2 in tqdm(ratio_keys):
-    df_copy[key1 + '_ratio'] = df_copy[key1] / df_copy[key2]
+    df_copy[key1 + '_ratio'] = (df_copy[key1] / df_copy[key2]).clip(-1, 1)
 
   for key in ['minus1_endowment', 'minus2_endowment',
               'minus3_endowment', 'minus4_endowment']:
-    df_copy[key + '_ratio'] = df_copy[key] / df['current_endowment']
+    df_copy[key + '_ratio'] = (df_copy[key] /
+                               df['current_endowment']).clip(-1, 1)
 
   for key in ['officer_1', 'officer_2', 'officer_3', 'officer_4']:
-    df_copy[key + '_ratio'] = df_copy[key] / df['officer_0']
+    df_copy[key + '_ratio'] = (df_copy[key] / df['officer_0']).clip(-1, 1)
 
+  df_copy = df_copy.fillna(0.0)
   return df_copy
 
 
@@ -63,15 +66,16 @@ def log_scale(df):
   return df_copy
 
 
-def preprocess():
-  """Apply scaling and normalization to DataFrame."""
+def scale_df():
+  """Apply scaling and normalization to loaded DataFrame."""
   df = load_data()
-  # df = scale_founded_year(df)
+  df = scale_founded_year(df)
   df = include_ratios(df)
   df = log_scale(df)
   return df
 
 
 if __name__ == '__main__':
-  df = preprocess()
-  df.to_csv('scaled_data.csv')
+  df = scale_df()
+  path = os.path.join(os.path.dirname(__file__), 'scaled_data.csv')
+  df.to_csv(path, index=False)

@@ -7,7 +7,8 @@ import asyncio
 import aiohttp
 from tqdm import trange
 from nine_ninety.scrape.utils import parse, save_as_csv, verify, empty_data
-from nine_ninety.scrape.utils import bundle_year, confirm_year, clean_year, get_data_path
+from nine_ninety.scrape.utils import bundle_year, confirm_year, clean_year
+from nine_ninety.scrape.index import get_index_years, get_all_json_index, get_data_path
 
 
 SESSIONS_PER_BATCH = 20
@@ -102,3 +103,9 @@ def run_year(year):
     bundle_year(year)
     confirm_year(year)
     clean_year(year)
+
+
+if __name__ == '__main__':
+  get_all_json_index()
+  for year in get_index_years():
+    run_year(year)

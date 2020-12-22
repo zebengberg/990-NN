@@ -6,6 +6,7 @@ import pkgutil
 import io
 from lxml import etree
 import pandas as pd
+from nine_ninety.scrape.index import get_data_path, get_index_years
 
 
 xp_bytes = pkgutil.get_data(__name__, '../xpath_headers.csv')
@@ -25,12 +26,6 @@ def empty_data():
   return dict(zip(keys, [0] * len(keys)))
 
 
-def get_data_path():
-  """Return the absolute path of the `data` directory holding 990 data."""
-  cur_dir = os.path.dirname(__file__)
-  return os.path.join(cur_dir, '..', 'data')
-
-
 def parse(xml):
   """Grab values from xml based on xpath_headers."""
   data = {}
@@ -40,6 +35,7 @@ def parse(xml):
   try:
     version_year = int(root.attrib['returnVersion'].split('v')[0])
   except KeyError as e:
+    print('Could not find schema version for XML tree below.')
     print(root)
     raise e
 
@@ -49,7 +45,11 @@ def parse(xml):
     paths = NEW_PATHS
 
   for k, p in paths.items():
+
     try:
+      # dealing with xpath issue for 2013
+      if version_year == 2013 and k == 'organization_name':
+        p = p[:-3]  # removing the Txt from the trail
       data[k] = root.find(p, namespaces=root.nsmap).text
     except AttributeError:
       data[k] = 0  # can easily be cast to int, float, str, bool
@@ -79,9 +79,16 @@ def parse_officers(root, version_year):
 
 
 def verify(data, org):
-  """Verify organization index EIN agrees with xml EIN."""
+  """Verify organization index data agrees with xml data."""
   if (e1 := data['ein']) != (e2 := org['EIN']):
     raise ValueError(f'EINs {e1} and {e2} do not match!')
+
+  tax_period = org['TaxPeriod']
+  year, month = int(tax_period[:4]), int(tax_period[4:])
+  if month < 12:
+    year -= 1
+  if (t := int(data['tax_year'])) != year:
+    raise ValueError(f'Years {t} and {tax_period, year, month} do not match!')
 
 
 def save_as_csv(data, filepath):
@@ -142,15 +149,6 @@ def clean_year(year):
     os.remove(batch)
 
 
-def get_index_years():
-  """Return list of years corresponding to cached index files."""
-
-  index_path = os.path.join(get_data_path(), 'index')
-  years = os.listdir(index_path)
-  years.sort()
-  return [int(y.split('_')[1][:4]) for y in years]
-
-
 def load_data(year=None):
   """Return DataFrame containing 990 data from specified year."""
   years = get_index_years()
@@ -166,6 +164,8 @@ def load_data(year=None):
       print('Loading data from', y)
       df = pd.read_csv(path)
       dfs.append(df)
+    else:
+      raise FileNotFoundError(f'Could not find CSV data from {y}.')
   df = pd.concat(dfs)
 
   return fix_mistakes(df)
@@ -180,13 +180,17 @@ def fix_mistakes(df):
   # dealing with 404 errors arrising from outdated index files in early years
   print('Removing empty items ....')
   df = df[df['ein'] != 0]  # to deal with 404s from early years
-  df = df[df['organization_name'] != '0']  # removing unnamed
+  mask = df['organization_name'] == '0'
+  if s := mask.sum():
+    print(f'Found {s} organizations without a name!')
+  df = df[~mask]  # removing unnamed
 
   # some organizations have repeated tax forms in a given year
   # only keep most recently submitted form
   print('Keeping at most one tax form per organization per year ....')
   df = df.groupby(['ein', 'tax_year']).last().reset_index()
-  return df
+  print('Sorting by tax year ....')
+  return df.sort_values('tax_year')
 
 
 def get_boolean_keys():
