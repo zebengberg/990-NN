@@ -87,8 +87,9 @@ def verify(data, org):
   year, month = int(tax_period[:4]), int(tax_period[4:])
   if month < 12:
     year -= 1
-  if (t := int(data['tax_year'])) != year:
-    raise ValueError(f'Years {t} and {tax_period, year, month} do not match!')
+  if (t := int(data['tax_year'])) not in [year, year + 1]:
+    print(f'Warning: Years {t} and {tax_period} do not match!')
+    print(org)
 
 
 def save_as_csv(data, filepath):
@@ -190,7 +191,8 @@ def fix_mistakes(df):
   print('Keeping at most one tax form per organization per year ....')
   df = df.groupby(['ein', 'tax_year']).last().reset_index()
   print('Sorting by tax year ....')
-  return df.sort_values('tax_year')
+  df = df.sort_values('tax_year')
+  return df.reset_index(drop=True)
 
 
 def get_boolean_keys():

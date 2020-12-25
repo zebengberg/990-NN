@@ -56,21 +56,31 @@ def log_scale(df):
   print('Log scaling numeric data ....')
 
   df_copy = df.copy()
-  for _, row in tqdm(XP.iterrows()):
-    if row.loc['data_type'] == 'int':
-      # masking tax_year, founded_year, n_board, n_employees, n_volunteers
-      key = row['key']
-      if not ('_year' in key or key[:2] == 'n_'):
-        s = np.sign(df[key])
-        df_copy[key] = s * np.log(df[key] * s + 1)
+  for key in tqdm(get_numeric_keys(False)):
+    s = np.sign(df[key])
+    df_copy[key] = s * np.log(df[key] * s + 1)
   return df_copy
+
+
+def get_numeric_keys(include_floats=True):
+  """Determine the keys of numeric categories."""
+  keys = []
+  for _, row in XP.iterrows():
+    key = row['key']
+    if row.loc['data_type'] == 'int':
+      # masking tax_year and founded_year
+      if '_year' not in key:
+        keys.append(key)
+    elif include_floats and row.loc['data_type'] == 'float':
+      keys.append(key)
+  return keys
 
 
 def scale_df():
   """Apply scaling and normalization to loaded DataFrame."""
   df = load_data()
   df = scale_founded_year(df)
-  df = include_ratios(df)
+  # df = include_ratios(df)
   df = log_scale(df)
   return df
 

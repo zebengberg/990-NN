@@ -60,7 +60,7 @@ def run_batch(orgs, csv_path):
     assert len(batch) == len(orgs)
     save_as_csv(batch, csv_path)
 
-  except aiohttp.ClientError as e:
+  except (aiohttp.ClientError, asyncio.exceptions.TimeoutError) as e:
     print(e)
     time.sleep(10)
     run_batch(orgs, csv_path)
