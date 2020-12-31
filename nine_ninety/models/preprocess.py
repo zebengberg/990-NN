@@ -85,6 +85,14 @@ def scale_df():
   return df
 
 
+def read_scaled_df():
+  """Read scaled_data.csv and return as pd.DataFrame."""
+  print('Reading scaled data ...')
+  path = os.path.dirname(__file__)
+  path = os.path.join(path, 'scaled_data.csv')
+  return pd.read_csv(path)
+
+
 if __name__ == '__main__':
   df = scale_df()
   path = os.path.join(os.path.dirname(__file__), 'scaled_data.csv')
