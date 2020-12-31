@@ -1,11 +1,13 @@
-"""Predict an organization's class and detect possible classification mistakes
-on tax form."""
+"""Predict an organization's class from its mission statement and detect
+possible human errors on tax form."""
+
 
 import tensorflow as tf
 from tensorflow.keras.layers.experimental.preprocessing import TextVectorization
 import pandas as pd
 import numpy as np
 from sklearn.model_selection import train_test_split
+from sklearn.metrics import roc_curve
 import matplotlib.pyplot as plt
 from nine_ninety.scrape.utils import get_boolean_keys, load_data
 
@@ -17,7 +19,7 @@ def prepare_data(full_df):
   idx = grouped['mission'].agg(lambda x: x.str.len().idxmax())
   df = full_df.iloc[idx.values].set_index('ein')
   mask = df['mission'].str.len() < 40
-  print(f'Removing {len(mask)} organization with short missions.')
+  print(f'Removing {sum(mask)} organization with short missions.')
   df = df[~mask]
   return df[['mission'] + get_boolean_keys()]
 
@@ -32,13 +34,22 @@ def print_size(df, category):
   print(f'Negatives: {neg}%\nPositives: {pos}%')
 
 
-def split_data(df, category):
+def split_data(df, category, over_sample=False):
   """Split data into train and test sets."""
   df_train, df_test = train_test_split(df, test_size=0.2)
   x_train = df_train['mission']
   y_train = df_train[category]
   x_test = df_test['mission']
   y_test = df_test[category]
+  if over_sample:
+    positives = y_train[y_train == 1].index
+    n_extras = (y_train == 0).sum() - (y_train == 1).sum()
+    idx = np.random.choice(positives, n_extras)
+    extras = df_train.loc[idx]
+    df_train = pd.concat([df_train, extras])
+    df_train = df_train.sample(frac=1)
+    x_train = df_train['mission']
+    y_train = df_train[category]
   return x_train, y_train, x_test, y_test
 
 
@@ -68,7 +79,7 @@ def determine_class_weights(y_train):
   return output_bias, class_weight
 
 
-def build_model(encoder, output_bias, **kwargs):
+def build_model(encoder, output_bias, embedding_dim):
   """Build Sequential model."""
 
   model = tf.keras.Sequential([
@@ -78,9 +89,9 @@ def build_model(encoder, output_bias, **kwargs):
           output_dim=embedding_dim),
       tf.keras.layers.GlobalAveragePooling1D(),
       # tf.keras.layers.Bidirectional(tf.keras.layers.LSTM(64)),
-      tf.keras.layers.Dropout(0.5),
+      tf.keras.layers.Dropout(0.2),
       tf.keras.layers.Dense(256, activation='relu'),
-      tf.keras.layers.Dropout(0.5),
+      tf.keras.layers.Dropout(0.2),
       tf.keras.layers.Dense(1, activation='sigmoid', bias_initializer=output_bias)])
 
   optimizer = tf.keras.optimizers.Adam(lr=1e-4)
@@ -115,29 +126,7 @@ def plot_training_metrics(history, category, eval_results):
   plt.show()
 
 
-def explore_model_misclassified(model, x_test, y_test):
-  """Explore test data in which model incorrectly identified class."""
-  eins = []
-  for i, class_name in enumerate(['POSITIVES', 'NEGATIVES']):
-    class_filt = pd.DataFrame(x_test[y_test == i])
-    class_filt['pred'] = model.predict(class_filt)
-    class_filt = class_filt.sort_values(by='pred', ascending=i)
-    eins += list(class_filt.iloc[:100].index)
-    false_classified = class_filt.iloc[:5]
-    print('TOP FALSE ' + class_name + '\n')
-    for ein, row in false_classified.iterrows():
-      print('ein:', ein)
-      print('prediction:', row['pred'])
-      print('mission:', row['mission'])
-      print('')
-  return eins
-
-
-def explore_model_confusion(model, x_test, y_test):
-  """Explore test data in which model does not identify unambiguous class."""
-
-
-def human_error_probability(full_df, df, ein, category):
+def prob_human_error(full_df, df, ein, category):
   """Determine if there is a possible human error on the 990 form."""
   all_marked = full_df[full_df['ein'] == ein][category]
   specific_marked = df[category][ein]
@@ -146,40 +135,92 @@ def human_error_probability(full_df, df, ein, category):
   return 1.0 - n_agree / len(all_marked)
 
 
-full_df = load_data()
-df = prepare_data(full_df)
-category = 'is_school'
-print_size(df, category)
-x_train, y_train, x_test, y_test = split_data(df, category)
+def print_initial_rows(data_frame, full_df, df, category):
+  for ein, row in data_frame.iterrows():
+    print('ein:', ein)
+    print('prediction:', row['pred'])
+    print('actual:', row['actual'])
+    print('probability human error:',
+          prob_human_error(full_df, df, ein, category))
+    print('mission:', row['mission'])
+    print('')
 
-max_features = 3000
-sequence_length = 100
-encoder = build_encoder(max_features, sequence_length, x_train)
-sample_encoder_vocab(encoder, x_train)
 
-embedding_dim = 32
-batch_size = 64
-epochs = 10
-output_bias, class_weight = determine_class_weights(y_train)
-model = build_model(encoder, output_bias)
-print(model.summary())
-print('Training ...')
-history = model.fit(x_train, y_train, batch_size=batch_size,
-                    epochs=epochs, class_weight=class_weight,
-                    validation_split=0.1)
+def explore_model_misclassified(model, x_test, y_test, full_df, df, category):
+  """Explore test data in which model incorrectly identifies class."""
+  for i, class_name in enumerate(['POSITIVES', 'NEGATIVES']):
+    d = pd.DataFrame(x_test[y_test == i])
+    d['pred'] = model.predict(d)
+    d['actual'] = i
+    d = d.sort_values('pred', ascending=i)
+    d = d.iloc[:10]
+    print('TOP FALSE ' + class_name + '\n')
+    print_initial_rows(d, full_df, df, category)
 
-print('Evaluating ...')
-eval_results = model.evaluate(x_test, y_test, verbose=1)
-metric_keys = list(history.history.keys())
-metric_keys = metric_keys[:len(metric_keys) // 2]
-eval_results = dict(zip(metric_keys, eval_results))
-plot_training_metrics(history, category, eval_results)
 
-print('Exploring mistakes ...')
-eins = explore_model_misclassified(model, x_test, y_test)
-for ein in eins:
-  print('Probability of mistake for EIN:', ein)
-  print(human_error_probability(full_df, df, ein, category))
+def explore_model_ambiguity(model, x_test, y_test, full_df, df, category):
+  """Explore test data in which model cannot identify class."""
+  y_pred = model.predict(x_test)
+  d = pd.DataFrame(
+      {'mission': x_test, 'actual': y_test, 'pred': y_pred.flatten()})
+  d['ambiguity'] = (d['pred'] - 0.5).abs()
+  d = d.sort_values('ambiguity').drop(columns=['ambiguity'])
+  d = d.iloc[:20]
+  print_initial_rows(d, full_df, df, category)
 
-# TODO: write this
-explore_model_confusion(model, x_test, y_test)
+
+def plot_roc(actual, pred):
+  """Plot ROC with sklearn roc_curve."""
+  fp, tp, _ = roc_curve(actual, pred)
+  plt.figure(figsize=(8, 8))
+  plt.plot(fp, tp, linewidth=2)
+  plt.xlabel('False positives')
+  plt.ylabel('True positives')
+  plt.grid(True)
+  ax = plt.gca()
+  ax.set_aspect('equal')
+  plt.show()
+
+
+if __name__ == '__main__':
+  full_df = load_data()
+  df = prepare_data(full_df)
+  category = 'is_school'
+  print_size(df, category)
+  x_train, y_train, x_test, y_test = split_data(df, category, over_sample=True)
+
+  print('Sampling from the encoder vocabulary ...')
+  max_features = 3000
+  sequence_length = 100
+  encoder = build_encoder(max_features, sequence_length, x_train)
+  sample_encoder_vocab(encoder, x_train)
+
+  embedding_dim = 32
+  batch_size = 64
+  epochs = 5
+  output_bias, class_weight = determine_class_weights(y_train)
+  print('output bias:', output_bias)
+  print('class weights:', class_weight)
+  model = build_model(encoder, output_bias, embedding_dim)
+
+  # tracing computation in order to print summary of network
+  model(x_train.iloc[:batch_size])
+  print(model.summary())
+  print('Training ...')
+  history = model.fit(x_train, y_train, batch_size=batch_size,
+                      epochs=epochs, class_weight=class_weight,
+                      validation_split=0.1)
+
+  print('Evaluating ...')
+  eval_results = model.evaluate(x_test, y_test, verbose=1)
+  metric_keys = list(history.history.keys())
+  metric_keys = metric_keys[:len(metric_keys) // 2]
+  eval_results = dict(zip(metric_keys, eval_results))
+  plot_training_metrics(history, category, eval_results)
+
+  print('Exploring mistakes ...')
+  explore_model_misclassified(model, x_test, y_test, full_df, df, category)
+  explore_model_ambiguity(model, x_test, y_test, full_df, df, category)
+
+  print('Plotting ROC ...')
+  plot_roc(y_test, model.predict(x_test))
