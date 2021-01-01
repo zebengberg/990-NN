@@ -168,6 +168,7 @@ def load_data(year=None):
     else:
       raise FileNotFoundError(f'Could not find CSV data from {y}.')
   df = pd.concat(dfs)
+  print(f'Loaded data from {len(df)} individual tax forms')
 
   return fix_mistakes(df)
 

@@ -55,7 +55,6 @@ def split_data(df):
 
 def build_model(x_train_text, x_train_numeric, **kwargs):
   """Build TF model."""
-  print('Considering TF model on both numeric and text data...')
 
   max_features = 5000
   sequence_length = 100
@@ -70,22 +69,34 @@ def build_model(x_train_text, x_train_numeric, **kwargs):
   text_input = tf.keras.Input(shape=(None,), name='text', dtype='string')
   embedded = encoder(text_input)
   embedded = layers.Embedding(input_dim=max_features, output_dim=128)(embedded)
-  if kwargs['lstm']:
-    embedded = layers.LSTM(128)(embedded)
-  else:
-    embedded = layers.GlobalAveragePooling1D()(embedded)
+  # LSTM doesn't improved performance
+  # embedded = layers.LSTM(128)(embedded)
+  embedded = layers.GlobalAveragePooling1D()(embedded)
 
   numeric_shape = x_train_numeric.shape[1:]
   numeric_input = tf.keras.Input(shape=numeric_shape, name='numeric')
   normalized = normalizer(numeric_input)
 
-  x = layers.concatenate([embedded, normalized])
+  if 'only_numeric' in kwargs and kwargs['only_numeric']:
+    print('\nBuilding TF model with only numeric data ...')
+    inputs = numeric_input
+    x = normalized
+  elif 'only_text' in kwargs and kwargs['only_text']:
+    print('\nBuilding TF model with only text data ...')
+    inputs = text_input
+    x = embedded
+  else:
+    print('\nBuilding TF model with both numeric and text data ...')
+    inputs = [text_input, numeric_input]
+    x = layers.concatenate([embedded, normalized])
+  print('#' * 65)
+
   x = layers.Dropout(0.3)(x)
   x = layers.Dense(256, activation='relu')(x)
   x = layers.Dropout(0.3)(x)
   output = layers.Dense(1)(x)
 
-  model = tf.keras.Model(inputs=[text_input, numeric_input], outputs=output)
+  model = tf.keras.Model(inputs=inputs, outputs=output)
   model.compile(optimizer='adam', loss='mse', metrics=['mape', 'mae'])
   return model
 
@@ -110,7 +121,8 @@ def run_model(model, data):
 
 def linear_model(data):
   """Build, train, and test sklearn linear model."""
-  print('Considering sklearn linear model on numeric data ...')
+  print('\nBuilding sklearn linear model with only numeric data ...')
+  print('#' * 65)
   m = LinearRegression()
   m.fit(data['x_train_numeric'], data['y_train'])
   print('r^2 score:', m.score(data['x_test_numeric'], data['y_test']))
@@ -125,7 +137,11 @@ if __name__ == '__main__':
   data = split_data(df)
   linear_model(data)
 
-  model = build_model(**data, lstm=False)
+  model = build_model(**data, only_numeric=True)
   run_model(model, data)
-  model = build_model(**data, lstm=True)
+
+  model = build_model(**data, only_text=True)
+  run_model(model, data)
+
+  model = build_model(**data)
   run_model(model, data)
