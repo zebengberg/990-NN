@@ -93,6 +93,16 @@ def read_scaled_df():
   return pd.read_csv(path)
 
 
+def random_tax_year(df):
+  """Group df by EIN and keep a randomly sampled year."""
+
+  # the snippet below is much more performant than df = grouped.sample()
+  grouped = df.groupby('ein')
+  keeps = [np.random.choice(arr) for arr in grouped.indices.values()]
+  new_df = df.iloc[keeps]
+  return new_df.reset_index(drop=True)
+
+
 if __name__ == '__main__':
   df = scale_df()
   path = os.path.join(os.path.dirname(__file__), 'scaled_data.csv')

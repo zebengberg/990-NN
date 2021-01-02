@@ -12,8 +12,5 @@ __pycache__
 data/
 *data.csv
 
-# jupyter notebooks
-*.ipynb
-
 # outdated stuff
 old_src/

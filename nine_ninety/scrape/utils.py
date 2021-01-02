@@ -162,36 +162,36 @@ def load_data(year=None):
   for y in years:
     path = os.path.join(get_data_path(), str(y), str(y) + '.csv')
     if os.path.exists(path):
-      print('Loading data from', y)
+      print(f'Loading data from {y} ...')
       df = pd.read_csv(path)
       dfs.append(df)
     else:
       raise FileNotFoundError(f'Could not find CSV data from {y}.')
   df = pd.concat(dfs)
-  print(f'Loaded data from {len(df)} individual tax forms')
+  print(f'Successfully loaded data from {len(df)} tax forms.')
+  df = fix_mistakes(df)
+  print(f'After cleaning, data from {len(df)} tax forms remain.')
 
-  return fix_mistakes(df)
+  return df
 
 
 def fix_mistakes(df):
   """Correct obvious mistakes in 990 data."""
   # converting nan missions to empty strings
-  print('Converting empty missions to strings ....')
+  print('Converting null missions to empty strings ...')
   df['mission'] = df['mission'].fillna('')
 
   # dealing with 404 errors arrising from outdated index files in early years
-  print('Removing empty items ....')
   df = df[df['ein'] != 0]  # to deal with 404s from early years
-  mask = df['organization_name'] == '0'
-  if s := mask.sum():
-    print(f'Found {s} organizations without a name!')
-  df = df[~mask]  # removing unnamed
+
+  if s := sum(df['organization_name'] == '0'):
+    ValueError(f'Found {s} organizations without a name!')
 
   # some organizations have repeated tax forms in a given year
   # only keep most recently submitted form
-  print('Keeping at most one tax form per organization per year ....')
+  print('Keeping most recent tax form per organization per year ...')
   df = df.groupby(['ein', 'tax_year']).last().reset_index()
-  print('Sorting by tax year ....')
+  print('Sorting data by tax year ...')
   df = df.sort_values('tax_year')
   return df.reset_index(drop=True)
 

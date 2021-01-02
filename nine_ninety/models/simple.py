@@ -10,7 +10,7 @@ from sklearn.metrics import mean_squared_error as mse
 from sklearn.metrics import mean_absolute_error as mae
 from sklearn.metrics import mean_absolute_percentage_error as mape
 from tensorflow.keras.layers.experimental import preprocessing
-from nine_ninety.models.preprocess import read_scaled_df
+from nine_ninety.models.preprocess import read_scaled_df, random_tax_year
 
 
 def build_df(min_n_employees=2, max_n_employees=7):
@@ -25,11 +25,7 @@ def build_df(min_n_employees=2, max_n_employees=7):
   df = df.reset_index(drop=True)
 
   # only keep one row per organization to avoid "cheating"
-  # the snippet below is much more performant than df = grouped.sample()
-  grouped = df.groupby('ein')
-  keeps = [np.random.choice(arr) for arr in grouped.indices.values()]
-  df = df.iloc[keeps]
-  df = df.reset_index(drop=True)
+  df = random_tax_year(df)
 
   # disregard several other columns in addition to already dropped ein
   df = df.drop(columns=['tax_year', 'organization_name'])
