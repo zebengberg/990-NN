@@ -53,9 +53,9 @@ def split_data(df, category, over_sample=False):
   return x_train, y_train, x_test, y_test
 
 
-def build_encoder(max_features, sequence_length, x_train):
+def build_encoder(vocab_size, sequence_length, x_train):
   """Build and fit TensorFlow TextVectorization object."""
-  encoder = TextVectorization(max_tokens=max_features,
+  encoder = TextVectorization(max_tokens=vocab_size,
                               output_sequence_length=sequence_length)
   encoder.adapt(x_train.values)
   return encoder
@@ -190,9 +190,9 @@ if __name__ == '__main__':
   x_train, y_train, x_test, y_test = split_data(df, category, over_sample=True)
 
   print('Sampling from the encoder vocabulary ...')
-  max_features = 3000
+  vocab_size = 3000
   sequence_length = 100
-  encoder = build_encoder(max_features, sequence_length, x_train)
+  encoder = build_encoder(vocab_size, sequence_length, x_train)
   sample_encoder_vocab(encoder, x_train)
 
   embedding_dim = 32

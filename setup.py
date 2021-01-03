@@ -11,7 +11,10 @@ install_requires = [
     'pandas',
     'tqdm',
     'tensorflow',
-    'scikit_learn']
+    'scikit_learn',
+    'lxml',
+    'requests',
+    'aiohttp']
 
 
 setuptools.setup(
